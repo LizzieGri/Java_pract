@@ -1,0 +1,55 @@
+plugins{
+    id 'idea'
+    id 'java'
+}
+
+version="1.0"
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+task createJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File Example',
+                'Implementation-Version': version,
+                'Main-Class': 'Main'
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task moveJar() {
+    doLast {
+        ant.move file: "${buildDir}/libs/temp-1.0.jar",
+                todir: "C:\\forDocker"
+    }
+}
+
+task createImage(type: Exec) {
+    workingDir 'C:\\forDocker'
+    commandLine "docker", "build", "-t","liz", "C:\\forDocker"
+}
+
+
+task runImage(type: Exec) {
+    commandLine "docker", "run", "liz"
+}
+
+task stopImage(type: Exec) {
+    commandLine "docker", "stop", "liz"
+}
+
+task doMagic {
+    dependsOn 'createJar'
+    dependsOn 'moveJar'
+    dependsOn 'createImage'
+    dependsOn 'runImage'
+    tasks.findByName('moveJar').mustRunAfter 'createJar'
+    tasks.findByName('createImage').mustRunAfter 'moveJar'
+    tasks.findByName('runImage').mustRunAfter 'createImage'
+}
+
+//Get dependencies from Maven central repository
+repositories {
+    mavenCentral()
+}
